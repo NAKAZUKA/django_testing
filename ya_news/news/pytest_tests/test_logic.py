@@ -16,15 +16,19 @@ def test_client_cannot_create_comment(client,
     """Тест: клиент не может комментировать новость."""
     url = reverse('news:detail', args=get_url_news_detail(news))
     response = client.post(url, data=form_data)
-    login_url = reverse('users:login')
-    expected_url = f'{login_url}?next={url}'
+    assert response.status_code == HTTPStatus.FOUND
     assert Comment.objects.count() == 0
 
 
-def test_authorization_user_can_add_comment(not_author_client, news, form_data, get_url_news_detail):
+def test_authorization_user_can_add_comment(not_author_client,
+                                            news,
+                                            form_data,
+                                            get_url_news_detail
+                                            ):
     """Тест: авторизованный пользователь может комментировать новость."""
     url = reverse('news:detail', args=get_url_news_detail(news))
     response = not_author_client.post(url, data=form_data)
+    assert response.status_code == HTTPStatus.FOUND
     assert Comment.objects.count() == 1
 
 
