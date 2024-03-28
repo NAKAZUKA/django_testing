@@ -3,6 +3,16 @@ from http import HTTPStatus
 from django.urls import reverse
 
 from .conftest import NotesTestCase
+from .set_of_routes import (ROUTE_FOR_THE_ADD_NOTE_PAGE,
+                            ROUTE_FOR_THE_DELETE_NOTE_PAGE,
+                            ROUTE_FOR_THE_DETAIL_NOTE_PAGE,
+                            ROUTE_FOR_THE_EDIT_NOTE_PAGE,
+                            ROUTE_FOR_THE_HOME_PAGE,
+                            ROUTE_FOR_THE_LIST_PAGE,
+                            ROUTE_FOR_THE_SUCCESS_PAGE,
+                            ROUTE_FOR_THE_USER_LOGIN_PAGE,
+                            ROUTE_FOR_THE_USER_LOGOUT_PAGE,
+                            ROUTE_FOR_THE_USER_SIGNUP_PAGE)
 
 
 class RoutesTestCase(NotesTestCase):
@@ -14,14 +24,14 @@ class RoutesTestCase(NotesTestCase):
         для анонимных пользователей.
         """
         urls = (
-            'notes:home',
-            'users:logout',
-            'users:login',
-            'users:signup'
+            ROUTE_FOR_THE_HOME_PAGE,
+            ROUTE_FOR_THE_USER_LOGOUT_PAGE,
+            ROUTE_FOR_THE_USER_SIGNUP_PAGE,
+            ROUTE_FOR_THE_USER_LOGIN_PAGE
         )
         for url in urls:
             with self.subTest(url=url):
-                response = self.user_client.get(reverse(url))
+                response = self.user_client.get(self.reverse_method(url))
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_availability_different_pages_for_auth_user(self):
@@ -30,13 +40,13 @@ class RoutesTestCase(NotesTestCase):
         для авторизированных пользователей.
         """
         urls = (
-            'notes:list',
-            'notes:add',
-            'notes:success',
+            ROUTE_FOR_THE_LIST_PAGE,
+            ROUTE_FOR_THE_ADD_NOTE_PAGE,
+            ROUTE_FOR_THE_SUCCESS_PAGE,
         )
         for url in urls:
             with self.subTest(url=url):
-                response = self.user_client.get(reverse(url))
+                response = self.user_client.get(self.reverse_method(url))
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_availability_detail_delete_edit_page_for_only_author(self):
@@ -46,9 +56,9 @@ class RoutesTestCase(NotesTestCase):
         только для автора заметки.
         """
         urls = (
-            ('notes:detail', self.note.slug),
-            ('notes:edit', self.note.slug),
-            ('notes:delete', self.note.slug),
+            (ROUTE_FOR_THE_DETAIL_NOTE_PAGE, self.note.slug),
+            (ROUTE_FOR_THE_EDIT_NOTE_PAGE, self.note.slug),
+            (ROUTE_FOR_THE_DELETE_NOTE_PAGE, self.note.slug),
         )
         users_ststus = (
             (self.user_client, HTTPStatus.NOT_FOUND),
@@ -57,16 +67,20 @@ class RoutesTestCase(NotesTestCase):
         for user, status in users_ststus:
             for url, args in urls:
                 with self.subTest(url=url, user=user):
-                    response = user.get(reverse(url, args=(args,)))
+                    response = user.get(self.reverse_method(url, (args,)))
                     self.assertEqual(response.status_code, status)
 
     def test_redirect_to_page_auth0rizetion_for_anonymous_user(self):
         """Проверяем редиректы для анонимных пользователей."""
-        urls = ('notes:list', 'notes:add', 'notes:success')
+        urls = (ROUTE_FOR_THE_LIST_PAGE,
+                ROUTE_FOR_THE_ADD_NOTE_PAGE,
+                ROUTE_FOR_THE_SUCCESS_PAGE
+                )
         for url in urls:
             with self.subTest(url=url):
-                response = self.client.get(reverse(url))
+                response = self.client.get(self.reverse_method(url))
                 self.assertRedirects(
                     response,
-                    f'{reverse("users:login")}?next={reverse(url)}'
+                    f'{reverse(ROUTE_FOR_THE_USER_LOGIN_PAGE)}'
+                    f'?next={reverse(url)}'
                 )

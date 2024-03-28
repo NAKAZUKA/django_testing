@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
-
+from django.urls import reverse
 from notes.models import Note
 
 User = get_user_model()
@@ -8,21 +8,20 @@ User = get_user_model()
 
 class NotesTestCase(TestCase):
 
-    TITLE = 'testTitle'
-    TEXT = 'testText'
-    TEST_USER_NAME = 'testUser'
-    TEST_AUTHOR_NAME = 'testAuthor'
-
     @classmethod
     def setUpTestData(cls):
-        cls.user = User.objects.create(username=cls.TEST_USER_NAME)
+        cls.user = User.objects.create(username='testUser')
         cls.user_client = Client()
         cls.user_client.force_login(cls.user)
-        cls.author = User.objects.create(username=cls.TEST_AUTHOR_NAME)
+        cls.author = User.objects.create(username='testAuthor')
         cls.author_client = Client()
         cls.author_client.force_login(cls.author)
         cls.note = Note.objects.create(
-            title=cls.TITLE,
-            text=cls.TEXT,
+            title='testTitle',
+            text='testText',
             author=cls.author,
         )
+
+    @classmethod
+    def reverse_method(cls, routs, args=None):
+        return reverse(routs, args=args)

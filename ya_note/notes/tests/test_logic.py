@@ -1,58 +1,77 @@
 from http import HTTPStatus
 
-from django.urls import reverse
+from notes.forms import WARNING
+from notes.models import Note
 from pytils.translit import slugify
 
-from notes.forms import WARNING, NoteForm
-
 from .conftest import NotesTestCase
+from .set_of_routes import (ROUTE_FOR_THE_ADD_NOTE_PAGE,
+                            ROUTE_FOR_THE_EDIT_NOTE_PAGE)
 
 
 class LogicTestCase(NotesTestCase):
     """Тесты логики приложения notes"""
 
-    def test_auth_user_and_notauth_user_can_create_note(self):
-        """
-        Тест алогиненный пользователь может создать заметку,
-        а анонимный — не может
-        """
-        users = (
-            (self.user_client, HTTPStatus.OK),
-            (self.client, HTTPStatus.FOUND),
+    data = {
+        'title': 'testTitle',
+        'text': 'testText',
+    }
+
+    def test_auth_user_can_create_note(self):
+        """Тест залогиненный пользователь может создать заметку"""
+        response = self.user_client.post(
+            self.reverse_method(ROUTE_FOR_THE_ADD_NOTE_PAGE),
         )
-        for client, status in users:
-            with self.subTest(client=client):
-                response = client.get(reverse('notes:add'))
-                self.assertEqual(response.status_code, status)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_not_auth_user_cannot_create_note(self):
+        """Тест не залогиненный пользователь не может создать заметку"""
+        response = self.client.post(
+            self.reverse_method(ROUTE_FOR_THE_ADD_NOTE_PAGE),
+        )
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_cannot_create_note_with_same_url(self):
-        """Тест нельзя создать заметку с одинаковым url"""
+        """Тест нельзя добавить запись с одинаковым url в базу данных"""
+        initial_count = Note.objects.count()
         response = self.user_client.post(
-            reverse('notes:add'),
-            data={
-                'title': self.TITLE,
-                'text': self.TEXT,
-            },
-            follow=True
-        )
+            self.reverse_method(ROUTE_FOR_THE_ADD_NOTE_PAGE), data=self.data)
+        self.assertEqual(initial_count, Note.objects.count())
         self.assertContains(response, WARNING)
 
     def test_autofill_url_in_form(self):
         """Тест проверяет что запись создается с автозаполненным slug"""
-        expected_slug = slugify(self.note.title)
-        form = NoteForm(instance=self.note)
-        self.assertEqual(form.initial['slug'], expected_slug)
-
-    def test_author_can_edit_delete_note_and_cannot_edit_delete_others(self):
-        """
-        Тест проверяет возможность редактирования и удаления своих заметок
-        и недоступность редактирования и удаления заметок других пользователей
-        """
-        users = (
-            (self.user_client, self.note, HTTPStatus.NOT_FOUND),
-            (self.author_client, self.note, HTTPStatus.OK),
+        response = self.user_client.post(
+            self.reverse_method(ROUTE_FOR_THE_ADD_NOTE_PAGE), data=self.data)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(
+            Note.objects.first().slug, slugify(self.data['title'])
         )
-        for client, note, status in users:
-            with self.subTest(client=client, note=note):
-                response = client.get(reverse('notes:edit', args=(note.slug,)))
-                self.assertEqual(response.status_code, status)
+
+    def test_author_can_edit_delete_note(self):
+        """
+        Тест проверяет возможность редактирования
+        и удаления автору своих заметок через POST запрос
+        """
+        response = self.author_client.post(
+            self.reverse_method(ROUTE_FOR_THE_EDIT_NOTE_PAGE,
+                                (self.note.slug,)
+                                ),
+            data=self.data
+        )
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(Note.objects.count(), 1)
+
+    def test_user_cannot_edit_delete_note(self):
+        """
+        Тест проверяет недоступность редактирования
+        и удаления заметок других пользователей
+        """
+        response = self.user_client.post(
+            self.reverse_method(ROUTE_FOR_THE_EDIT_NOTE_PAGE,
+                                (self.note.slug,)
+                                ),
+            data=self.data
+        )
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        self.assertEqual(Note.objects.count(), 1)
