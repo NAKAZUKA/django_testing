@@ -7,7 +7,15 @@ from django.urls import reverse
 from news.models import News, Comment
 
 
-COUNT_COMMENTS_FOR_TESTING = 5
+FORM_DATA = {'text': 'Текст комментария'}
+COUNT_OBJECTS_FOR_TESTING = 10
+ROUTES_FOR_HOME_PAGE = 'news:home'
+ROUTES_FOR_DETAIL_PAGE = 'news:detail'
+ROUTES_FOR_DELETE_PAGE = 'news:delete'
+ROUTES_FOR_EDIT_PAGE = 'news:edit'
+ROUTES_FOR_USER_LOGIN_PAGE = 'users:login'
+ROUTES_FOR_USER_LOGOUT_PAGE = 'users:logout'
+ROUTES_FOR_USER_SIGNUP_PAGE = 'users:signup'
 
 
 @pytest.fixture
@@ -48,13 +56,12 @@ def news(author):
 
 @pytest.fixture
 def create_news_objects():
-    def _create_news_objects(count):
-        for i in range(count):
-            News.objects.create(
-                title=f'title {i}',
-                text=f'text {i}',
-            )
-    return _create_news_objects
+    for i in range(COUNT_OBJECTS_FOR_TESTING):
+        News.objects.create(
+            title=f'title {i}',
+            text=f'text {i}',
+        )
+    return None
 
 
 @pytest.fixture
@@ -77,20 +84,10 @@ def comment(author, news):
 def create_comment_objects(author, news):
     news_url = reverse('news:detail', kwargs={'pk': news.pk},)
     now = timezone.now()
-    for index in range(COUNT_COMMENTS_FOR_TESTING):
+    for index in range(COUNT_OBJECTS_FOR_TESTING):
         comment = Comment.objects.create(
             news=news, author=author, text=f'Comment text{index}',
         )
         comment.created = now + timedelta(days=index)
         comment.save()
     return news_url
-
-
-@pytest.fixture
-def form_data():
-    return {'text': 'Текст комментария'}
-
-
-@pytest.fixture
-def form_data_with_bad_wards():
-    return {'text': 'редиска'}
