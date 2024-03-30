@@ -1,40 +1,33 @@
 import pytest
 from django.urls import reverse
 
-from .conftest import (COUNT_OBJECTS_FOR_TESTING,
-                       ROUTES_FOR_DETAIL_PAGE,
-                       ROUTES_FOR_HOME_PAGE
-                       )
+from .conftest import COUNT_NEWS_COMMENTS_FOR_TESTING
 
 pytestmark = pytest.mark.django_db
+ROUTES_FOR_HOME_PAGE = reverse('news:home')
 
 
 def test_main_home_news_count(client, create_news_objects):
     """Тест проверяет количество новостей на главной странице"""
-    url = reverse(ROUTES_FOR_HOME_PAGE)
-    response = client.get(url)
     assert len(
-        response.context['object_list']
-    ) == COUNT_OBJECTS_FOR_TESTING
+        client.get(ROUTES_FOR_HOME_PAGE).context['object_list']
+    ) == COUNT_NEWS_COMMENTS_FOR_TESTING
 
 
 def test_order_news_on_home_page(client, create_news_objects):
     """Тест проверяет правильность сортировки новостей на главной странице"""
-    url = reverse(ROUTES_FOR_HOME_PAGE)
-    response = client.get(url)
-    object_list = response.context['object_list']
+    object_list = client.get(ROUTES_FOR_HOME_PAGE).context['object_list']
     all_dates = [news.date for news in object_list]
     sorted_dates = sorted(all_dates, reverse=True)
     assert all_dates == sorted_dates
 
 
-def test_comment_form_availability(client, news, get_url_news_detail):
+def test_comment_form_availability(client, detail_page_url):
     """
     Тест проверяет доступность формы для отправки
     комментария на странице новости анонимному пользователю
     """
-    url = reverse(ROUTES_FOR_DETAIL_PAGE, args=get_url_news_detail(news))
-    response = client.get(url)
+    response = client.get(detail_page_url)
     assert 'comment_form' not in response.context
 
 
