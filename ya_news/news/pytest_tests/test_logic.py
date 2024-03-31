@@ -6,55 +6,59 @@ from news.forms import BAD_WORDS, WARNING
 from news.models import Comment
 
 FORM_DATA = {'text': 'Текст комментария'}
+NEW_TEXT_DATA = {'text': 'Новый текст комментария'}
 
 
 def test_client_cannot_create_comment(client,
                                       detail_page_url
                                       ):
     """Тест: клиент не может комментировать новость."""
-    url = detail_page_url
-    response = client.post(url, data=FORM_DATA)
+    response = client.post(detail_page_url, data=FORM_DATA)
     assert response.status_code == HTTPStatus.FOUND
     assert Comment.objects.count() == 0
 
 
 def test_client_user_can_add_comment(not_author_client,
-                                     detail_page_url
+                                     detail_page_url,
+                                     news,
+                                     not_author
                                      ):
     """Тест: авторизованный пользователь может комментировать новость."""
-    url = detail_page_url
-    response = not_author_client.post(url, data=FORM_DATA)
+    response = not_author_client.post(detail_page_url, data=FORM_DATA)
     assert response.status_code == HTTPStatus.FOUND
     assert Comment.objects.count() == 1
-    assert Comment.objects.first().text == FORM_DATA['text']
-    assert Comment.objects.first().news_id is not None
-    assert Comment.objects.first().author_id is not None
+    new_comment = Comment.objects.first()
+    assert new_comment.text == FORM_DATA['text']
+    assert new_comment.news_id == news.pk
+    assert new_comment.author_id == not_author.id
 
 
-def test_bad_wards_in_comment(not_author_client, detail_page_url):
+def test_bad_words_in_comment(not_author_client, detail_page_url):
     """Тест: нельзя комментировать новость с запрещёнными словами."""
-    FORM_DATA['text'] = ' '.join(BAD_WORDS)
-    print(FORM_DATA)
-    url = detail_page_url
-    response = not_author_client.post(url, data=FORM_DATA)
-    assertFormError(response, form='form', field='text', errors=WARNING)
-    assert Comment.objects.count() == 0
+    for word in BAD_WORDS:
+        FORM_DATA['text'] = word
+        response = not_author_client.post(detail_page_url, data=FORM_DATA)
+        assertFormError(response, form='form', field='text', errors=WARNING)
+        assert Comment.objects.count() == 0
 
 
 def test_author_client_can_edit_comment(author_client,
-                                        edit_page_url
+                                        edit_page_url,
+                                        author,
+                                        news
                                         ):
     """
     Тест: авторизованный пользователь
     может редактировать комментарии.
     """
-    text_comment_before = Comment.objects.first().text
-    url = edit_page_url
-    response = author_client.post(url,
-                                  data={'text': 'Новый текст комментария'}
+    text_comment_before = Comment.objects.first()
+    response = author_client.post(edit_page_url,
+                                  data=NEW_TEXT_DATA
                                   )
     assert response.status_code == HTTPStatus.FOUND
-    assert text_comment_before != 'Новый текст комментария'
+    assert text_comment_before.text != NEW_TEXT_DATA['text']
+    assert text_comment_before.author_id == author.id
+    assert text_comment_before.news_id == news.id
 
 
 def test_author_client_can_delete_comment(author_client,
@@ -64,37 +68,40 @@ def test_author_client_can_delete_comment(author_client,
     Тест: авторизованный пользователь
     может удалять комментарии.
     """
-    url = delete_page_url
-    response = author_client.post(url)
+    response = author_client.post(delete_page_url)
     assert response.status_code == HTTPStatus.FOUND
     assert Comment.objects.count() == 0
 
 
 def test_not_author_client_cannot_delete_comment(not_author_client,
-                                                 delete_page_url
+                                                 delete_page_url,
+                                                 comment,
+                                                 news,
+                                                 not_author
                                                  ):
     """
     Тест: неавторизованный пользователь
     не может удалять комментарии.
     """
-    before_delete = Comment.objects.all()
-    url = delete_page_url
-    response = not_author_client.post(url)
+    response = not_author_client.post(delete_page_url)
     assert response.status_code == HTTPStatus.NOT_FOUND
-    after_delete = Comment.objects.all()
-    assert before_delete[0].text == after_delete[0].text
+    assert Comment.objects.count() == 1
+    assert comment.news_id == news.pk
+    assert comment.author_id != not_author.id
 
 
 def test_not_author_client_cannot_edit_comment(not_author_client,
-                                               edit_page_url
+                                               edit_page_url,
+                                               comment
                                                ):
     """
     Тест: не авторизованный пользователь
     не может редактировать комментарии.
     """
     assert Comment.objects.count() == 1
-    comment_before = Comment.objects.first()
-    url = edit_page_url
-    response = not_author_client.post(url, data=FORM_DATA)
+    comment_before = comment
+    response = not_author_client.post(edit_page_url, data=FORM_DATA)
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert comment_before.text != FORM_DATA['text']
+    assert comment_before.text == comment.text
+    assert comment_before.author_id == comment.author_id
+    assert comment_before.news_id == comment.news_id
