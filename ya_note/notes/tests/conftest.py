@@ -11,21 +11,20 @@ User = get_user_model()
 class NotesTestCase(TestCase):
 
     NOTE_SLUG = slugify('testTitle')
-    ROUTE_FOR_THE_HOME_PAGE = reverse('notes:home')
-    ROUTE_FOR_THE_LIST_PAGE = reverse('notes:list')
-    ROUTE_FOR_THE_ADD_NOTE_PAGE = reverse('notes:add')
-    ROUTE_FOR_THE_SUCCESS_PAGE = reverse('notes:success')
-    ROUTE_FOR_THE_EDIT_NOTE_PAGE = reverse('notes:edit', args=(NOTE_SLUG,))
-    ROUTE_FOR_THE_USER_LOGIN_PAGE = reverse('users:login')
-    ROUTE_FOR_THE_USER_SIGNUP_PAGE = reverse('users:signup')
-    ROUTE_FOR_THE_USER_LOGOUT_PAGE = reverse('users:logout')
-    ROUTE_FOR_THE_DETAIL_NOTE_PAGE = reverse('notes:detail', args=(NOTE_SLUG,))
-    ROUTE_FOR_THE_DELETE_NOTE_PAGE = reverse('notes:delete', args=(NOTE_SLUG,))
+    HOME_URL = reverse('notes:home')
+    LIST_URL = reverse('notes:list')
+    ADD_URL = reverse('notes:add')
+    SUCCES_URL = reverse('notes:success')
+    EDIT_URL = reverse('notes:edit', args=(NOTE_SLUG,))
+    USER_LOGIN_URL = reverse('users:login')
+    USER_SIGNUP_URL = reverse('users:signup')
+    USER_LOGOUT_URL = reverse('users:logout')
+    DETAIL_URL = reverse('notes:detail', args=(NOTE_SLUG,))
+    DELETE_URL = reverse('notes:delete', args=(NOTE_SLUG,))
 
     DATA = {
-        'title': 'testTitle',
+        'title': 'tesTitle',
         'text': 'testText',
-        'slug': NOTE_SLUG
     }
 
     @classmethod
@@ -40,5 +39,4 @@ class NotesTestCase(TestCase):
             title='testTitle',
             text='testText',
             author=cls.author,
-            slug=cls.NOTE_SLUG
         )

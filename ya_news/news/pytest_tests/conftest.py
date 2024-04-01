@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from news.models import Comment, News
+from yanews.settings import NEWS_COUNT_ON_HOME_PAGE
 
 
 @pytest.fixture
@@ -63,7 +64,7 @@ def news(author):
 def create_news_objects():
     news_objects = [
         News(title=f'title {i}', text=f'text {i}')
-        for i in range(10)
+        for i in range(NEWS_COUNT_ON_HOME_PAGE)
     ]
     News.objects.bulk_create(news_objects)
 

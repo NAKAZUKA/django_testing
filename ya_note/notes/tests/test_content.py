@@ -11,22 +11,23 @@ class ContentTestCase(NotesTestCase):
         заметок и присутствует в списке object_list в контексте
         """
         response = self.author_client.get(
-            self.ROUTE_FOR_THE_LIST_PAGE
+            self.LIST_URL
         )
-        notes_list = response.context['object_list']
-        self.assertIn(self.note, notes_list)
-        for note in notes_list:
-            if note == self.note:
-                self.assertEqual(note.title, self.note.title)
-                self.assertEqual(note.text, self.note.text)
+        notes = response.context['object_list']
+        self.assertIn(self.note, notes)
+        for note in notes:
+            self.assertEqual(note.title, self.note.title)
+            self.assertEqual(note.text, self.note.text)
+            self.assertEqual(note.slug, self.note.slug)
+            self.assertEqual(note.author, self.author)
 
     def test_authors_note_not_included_in_users_note_list(self):
         """Запись автора не отображается в списке заметок пользователя"""
         response = self.user_client.get(
-            self.ROUTE_FOR_THE_LIST_PAGE
+            self.LIST_URL
         )
-        notes_list = response.context['object_list']
-        self.assertNotIn(self.note, notes_list)
+        notes = response.context['object_list']
+        self.assertNotIn(self.note, notes)
 
     def test_page_add_and_edit_includ_forms(self):
         """
@@ -34,8 +35,8 @@ class ContentTestCase(NotesTestCase):
         включает в себя форму правильного типа
         """
         urls = (
-            (self.ROUTE_FOR_THE_ADD_NOTE_PAGE),
-            (self.ROUTE_FOR_THE_EDIT_NOTE_PAGE),
+            (self.ADD_URL),
+            (self.EDIT_URL),
         )
         for url in urls:
             with self.subTest(url=url):

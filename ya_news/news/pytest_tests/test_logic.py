@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+import pytest
 from pytest_django.asserts import assertFormError
 
 from news.forms import BAD_WORDS, WARNING
@@ -30,28 +31,29 @@ def test_client_user_can_add_comment(not_author_client,
     new_comment = Comment.objects.first()
     assert new_comment.text == FORM_DATA['text']
     assert new_comment.news_id == news.pk
-    assert new_comment.author_id == not_author.id
+    assert new_comment.author == not_author
 
 
-def test_bad_words_in_comment(not_author_client, detail_page_url):
+@pytest.mark.parametrize("word", BAD_WORDS)
+def test_bad_words_in_comment(not_author_client, detail_page_url, word):
     """Тест: нельзя комментировать новость с запрещёнными словами."""
-    for word in BAD_WORDS:
-        FORM_DATA['text'] = word
-        response = not_author_client.post(detail_page_url, data=FORM_DATA)
-        assertFormError(response, form='form', field='text', errors=WARNING)
-        assert Comment.objects.count() == 0
+    FORM_DATA = {'text': word}
+    response = not_author_client.post(detail_page_url, data=FORM_DATA)
+    assertFormError(response, form='form', field='text', errors=WARNING)
+    assert Comment.objects.count() == 0
 
 
 def test_author_client_can_edit_comment(author_client,
                                         edit_page_url,
                                         author,
-                                        news
+                                        news,
+                                        comment
                                         ):
     """
     Тест: авторизованный пользователь
     может редактировать комментарии.
     """
-    text_comment_before = Comment.objects.first()
+    text_comment_before = comment
     response = author_client.post(edit_page_url,
                                   data=NEW_TEXT_DATA
                                   )
@@ -62,7 +64,8 @@ def test_author_client_can_edit_comment(author_client,
 
 
 def test_author_client_can_delete_comment(author_client,
-                                          delete_page_url
+                                          delete_page_url,
+                                          comment
                                           ):
     """
     Тест: авторизованный пользователь

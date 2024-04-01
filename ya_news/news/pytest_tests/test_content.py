@@ -1,6 +1,9 @@
 import pytest
 from django.urls import reverse
 
+from yanews.settings import NEWS_COUNT_ON_HOME_PAGE
+from news.forms import CommentForm
+
 
 pytestmark = pytest.mark.django_db
 ROUTES_FOR_HOME_PAGE = reverse('news:home')
@@ -10,7 +13,7 @@ def test_main_home_news_count(client, create_news_objects):
     """Тест проверяет количество новостей на главной странице"""
     assert len(
         client.get(ROUTES_FOR_HOME_PAGE).context['object_list']
-    ) == 10
+    ) == NEWS_COUNT_ON_HOME_PAGE
 
 
 def test_order_news_on_home_page(client, create_news_objects):
@@ -30,6 +33,19 @@ def test_comment_form_availability(client, detail_page_url):
     """
     response = client.get(detail_page_url)
     assert 'form' not in response.context
+
+
+def test_comment_form_availability_for_auth_user(not_author_client,
+                                                 detail_page_url
+                                                 ):
+    """
+    Тест проверяет доступность формы для отправки
+    комментария на странице новости авторизованным пользователем
+    и её тип.
+    """
+    response = not_author_client.get(detail_page_url)
+    assert 'form' in response.context
+    assert isinstance(response.context['form'], CommentForm)
 
 
 def test_comment_ordering(client, create_comment_objects, detail_page_url):
