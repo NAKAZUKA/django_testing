@@ -30,42 +30,41 @@ def test_client_user_can_add_comment(not_author_client,
     assert Comment.objects.count() == 1
     new_comment = Comment.objects.first()
     assert new_comment.text == FORM_DATA['text']
-    assert new_comment.news_id == news.pk
+    assert new_comment.news == news
     assert new_comment.author == not_author
 
 
-@pytest.mark.parametrize("word", BAD_WORDS)
+@pytest.mark.parametrize(
+    "word",
+    BAD_WORDS
+)
 def test_bad_words_in_comment(not_author_client, detail_page_url, word):
     """Тест: нельзя комментировать новость с запрещёнными словами."""
-    FORM_DATA = {'text': word}
-    response = not_author_client.post(detail_page_url, data=FORM_DATA)
+    response = not_author_client.post(detail_page_url, data={'text': word})
     assertFormError(response, form='form', field='text', errors=WARNING)
     assert Comment.objects.count() == 0
 
 
 def test_author_client_can_edit_comment(author_client,
                                         edit_page_url,
-                                        author,
-                                        news,
-                                        comment
+                                        comment,
+                                        comment_form_data
                                         ):
     """
     Тест: авторизованный пользователь
     может редактировать комментарии.
     """
-    text_comment_before = comment
     response = author_client.post(edit_page_url,
                                   data=NEW_TEXT_DATA
                                   )
+    new_comment = Comment.objects.get(id=comment.id)
     assert response.status_code == HTTPStatus.FOUND
-    assert text_comment_before.text != NEW_TEXT_DATA['text']
-    assert text_comment_before.author_id == author.id
-    assert text_comment_before.news_id == news.id
+    assert new_comment.news == comment_form_data['news']
+    assert new_comment.text == comment_form_data['text']
 
 
 def test_author_client_can_delete_comment(author_client,
                                           delete_page_url,
-                                          comment
                                           ):
     """
     Тест: авторизованный пользователь
@@ -79,8 +78,6 @@ def test_author_client_can_delete_comment(author_client,
 def test_not_author_client_cannot_delete_comment(not_author_client,
                                                  delete_page_url,
                                                  comment,
-                                                 news,
-                                                 not_author
                                                  ):
     """
     Тест: неавторизованный пользователь
@@ -88,23 +85,22 @@ def test_not_author_client_cannot_delete_comment(not_author_client,
     """
     response = not_author_client.post(delete_page_url)
     assert response.status_code == HTTPStatus.NOT_FOUND
+    comment_after_delete = Comment.objects.get(id=comment.id)
     assert Comment.objects.count() == 1
-    assert comment.news_id == news.pk
-    assert comment.author_id != not_author.id
+    assert comment_after_delete.news == comment.news
+    assert comment_after_delete.text == comment.text
+    assert comment_after_delete.author == comment.author
 
 
-def test_not_author_client_cannot_edit_comment(not_author_client,
-                                               edit_page_url,
-                                               comment
-                                               ):
-    """
-    Тест: не авторизованный пользователь
-    не может редактировать комментарии.
-    """
-    assert Comment.objects.count() == 1
-    comment_before = comment
-    response = not_author_client.post(edit_page_url, data=FORM_DATA)
+def test_user_cant_edit_comment_another_user(not_author_client,
+                                             edit_page_url,
+                                             comment_form_data
+                                             ):
+    response = not_author_client.post(
+        edit_page_url,
+        data=comment_form_data
+    )
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert comment_before.text == comment.text
-    assert comment_before.author_id == comment.author_id
-    assert comment_before.news_id == comment.news_id
+    new_comment = Comment.objects.get()
+    assert new_comment.news == comment_form_data['news']
+    assert new_comment.text != comment_form_data['text']

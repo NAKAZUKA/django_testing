@@ -87,3 +87,11 @@ def create_comment_objects(author, news):
         )
         comment.created = now + timedelta(days=index)
         comment.save()
+
+
+@pytest.fixture
+def comment_form_data(news):
+    return {
+        'news': news,
+        'text': 'Новый текст комментария'
+    }
