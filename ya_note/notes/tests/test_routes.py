@@ -30,14 +30,12 @@ class RoutesTestCase(NotesTestCase):
     def test_redirect_for_anonymous_user(self):
         """Тест проверяет перенаправление анонимного пользователя."""
         routes_to_check = [
-            (self.DETAIL_URL, self.client, HTTPStatus.FOUND),
-            (self.EDIT_URL, self.client, HTTPStatus.FOUND),
-            (self.DELETE_URL, self.client, HTTPStatus.FOUND),
+            (self.DETAIL_URL, self.client),
+            (self.EDIT_URL, self.client),
+            (self.DELETE_URL, self.client),
         ]
-        for url, client, expected_status_code in routes_to_check:
+        for url, client in routes_to_check:
             response = client.get(url)
-            assert response.status_code == expected_status_code
             self.assertRedirects(
-                response, f'{self.USER_LOGIN_URL}'
-                f'?next={url}'
+                response, f'{self.USER_LOGIN_URL}?next={url}'
             )

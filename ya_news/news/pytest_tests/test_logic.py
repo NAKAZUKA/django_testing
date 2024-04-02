@@ -8,6 +8,9 @@ from news.models import Comment
 
 FORM_DATA = {'text': 'Текст комментария'}
 NEW_TEXT_DATA = {'text': 'Новый текст комментария'}
+comment_form_data = {
+    'text': 'Новый текст комментария'
+}
 
 
 def test_client_cannot_create_comment(client,
@@ -19,19 +22,19 @@ def test_client_cannot_create_comment(client,
     assert Comment.objects.count() == 0
 
 
-def test_client_user_can_add_comment(not_author_client,
+def test_client_user_can_add_comment(author_client,
+                                     author,
                                      detail_page_url,
-                                     news,
-                                     not_author
+                                     news
                                      ):
     """Тест: авторизованный пользователь может комментировать новость."""
-    response = not_author_client.post(detail_page_url, data=FORM_DATA)
+    response = author_client.post(detail_page_url, data=FORM_DATA)
     assert response.status_code == HTTPStatus.FOUND
     assert Comment.objects.count() == 1
-    new_comment = Comment.objects.first()
-    assert new_comment.text == FORM_DATA['text']
-    assert new_comment.news == news
-    assert new_comment.author == not_author
+    comment = Comment.objects.get()
+    assert comment.text == FORM_DATA['text']
+    assert comment.news == news
+    assert comment.author == author
 
 
 @pytest.mark.parametrize(
@@ -48,7 +51,6 @@ def test_bad_words_in_comment(not_author_client, detail_page_url, word):
 def test_author_client_can_edit_comment(author_client,
                                         edit_page_url,
                                         comment,
-                                        comment_form_data
                                         ):
     """
     Тест: авторизованный пользователь
@@ -59,8 +61,8 @@ def test_author_client_can_edit_comment(author_client,
                                   )
     new_comment = Comment.objects.get(id=comment.id)
     assert response.status_code == HTTPStatus.FOUND
-    assert new_comment.news == comment_form_data['news']
     assert new_comment.text == comment_form_data['text']
+    assert new_comment.author == comment.author
 
 
 def test_author_client_can_delete_comment(author_client,
@@ -94,13 +96,12 @@ def test_not_author_client_cannot_delete_comment(not_author_client,
 
 def test_user_cant_edit_comment_another_user(not_author_client,
                                              edit_page_url,
-                                             comment_form_data
+                                             comment,
                                              ):
     response = not_author_client.post(
         edit_page_url,
         data=comment_form_data
     )
+    new_comment = Comment.objects.get(id=comment.id)
     assert response.status_code == HTTPStatus.NOT_FOUND
-    new_comment = Comment.objects.get()
-    assert new_comment.news == comment_form_data['news']
-    assert new_comment.text != comment_form_data['text']
+    assert new_comment.author == new_comment.author

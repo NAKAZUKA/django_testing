@@ -11,6 +11,7 @@ ROUTES_FOR_USER_LOGOUT_PAGE = reverse('users:logout')
 ROUTES_FOR_USER_SIGNUP_PAGE = reverse('users:signup')
 DELETE_PAGE_URL = pytest.lazy_fixture('delete_page_url')
 EDIT_PAGE_URL = pytest.lazy_fixture('edit_page_url')
+DETAIL_PAGE_URL = pytest.lazy_fixture('detail_page_url')
 author_client = pytest.lazy_fixture('author_client')
 not_author_client = pytest.lazy_fixture('not_author_client')
 client = pytest.lazy_fixture('client')
@@ -23,14 +24,11 @@ client = pytest.lazy_fixture('client')
         (client, ROUTES_FOR_USER_LOGIN_PAGE, HTTPStatus.OK),
         (client, ROUTES_FOR_USER_LOGOUT_PAGE, HTTPStatus.OK),
         (client, ROUTES_FOR_USER_SIGNUP_PAGE, HTTPStatus.OK),
-        (client, pytest.lazy_fixture("detail_page_url"), HTTPStatus.OK),
-        (author_client, pytest.lazy_fixture("delete_page_url"),
-         HTTPStatus.OK),
-        (author_client, pytest.lazy_fixture("edit_page_url"), HTTPStatus.OK),
-        (not_author_client, pytest.lazy_fixture("delete_page_url"),
-         HTTPStatus.NOT_FOUND),
-        (not_author_client, pytest.lazy_fixture("edit_page_url"),
-         HTTPStatus.NOT_FOUND),
+        (client, DETAIL_PAGE_URL, HTTPStatus.OK),
+        (author_client, DELETE_PAGE_URL, HTTPStatus.OK),
+        (author_client, EDIT_PAGE_URL, HTTPStatus.OK),
+        (not_author_client, DELETE_PAGE_URL, HTTPStatus.NOT_FOUND),
+        (not_author_client, EDIT_PAGE_URL, HTTPStatus.NOT_FOUND),
     ]
 )
 def test_pages_availability_for_different_users(news,

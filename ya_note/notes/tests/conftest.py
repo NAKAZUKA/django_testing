@@ -20,9 +20,6 @@ class NotesTestCase(TestCase):
     USER_LOGOUT_URL = reverse('users:logout')
     DETAIL_URL = reverse('notes:detail', args=(SLUG,))
     DELETE_URL = reverse('notes:delete', args=(SLUG,))
-    NOTE_TITLE = 'testTitle'
-    NOTE_TEXT = 'testText'
-    NEW_NOTE_TEXT = 'newformtext'
 
     @classmethod
     def setUpTestData(cls):
@@ -33,17 +30,17 @@ class NotesTestCase(TestCase):
         cls.author_client = Client()
         cls.author_client.force_login(cls.author)
         cls.note = Note.objects.create(
-            title=cls.NOTE_TITLE,
-            text=cls.NOTE_TEXT,
+            title='testTitle',
+            text='testText',
             author=cls.author,
         )
         cls.form_data = {
-            'title': cls.NOTE_TITLE,
-            'text': cls.NOTE_TEXT,
+            'title': 'testTitle',
+            'text': 'testText',
             'slug': cls.SLUG,
         }
         cls.new_form_data = {
-            'title': cls.NOTE_TITLE,
-            'text': cls.NEW_NOTE_TEXT,
-            'slug': cls.SLUG,
+            'title': 'newtestTitle',
+            'text': 'newtestText',
+            'slug': 'newtestSlug',
         }

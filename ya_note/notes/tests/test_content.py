@@ -13,16 +13,14 @@ class ContentTestCase(NotesTestCase):
         response = self.author_client.get(
             self.LIST_URL
         )
-        notes_list = response.context['object_list']
-        self.assertIn(self.note, notes_list)
-        self.assertIs(
-            self.note in response.context['object_list'],
-            True
-        )
-        self.assertEqual(self.note.title, notes_list[0].title)
-        self.assertEqual(self.note.text, notes_list[0].text)
-        self.assertEqual(self.note.slug, notes_list[0].slug)
-        self.assertEqual(self.note.author, notes_list[0].author)
+        notes = response.context['object_list']
+        self.assertIn(self.note, notes)
+        self.assertEqual(len(notes), 1)
+        note_from_context = notes[0]
+        self.assertEqual(note_from_context.title, self.note.title)
+        self.assertEqual(note_from_context.text, self.note.text)
+        self.assertEqual(note_from_context.slug, self.note.slug)
+        self.assertEqual(note_from_context.author, self.note.author)
 
     def test_authors_note_not_included_in_users_note_list(self):
         """Запись автора не отображается в списке заметок пользователя"""
@@ -31,10 +29,6 @@ class ContentTestCase(NotesTestCase):
         )
         notes = response.context['object_list']
         self.assertNotIn(self.note, notes)
-        self.assertIs(
-            self.note in response.context['object_list'],
-            False
-        )
 
     def test_page_add_and_edit_includ_forms(self):
         """
