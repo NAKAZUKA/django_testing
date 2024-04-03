@@ -51,4 +51,4 @@ def test_pages_availability_for_different_users(news,
 def test_redirect_for_anonymous_user(client, url):
     """Тест проверяет перенаправление анонимного пользователя."""
     response = client.get(url)
-    assertRedirects(response, reverse("users:login") + "?next=" + url)
+    assertRedirects(response, f'{ROUTES_FOR_USER_LOGIN_PAGE}?next={url}')

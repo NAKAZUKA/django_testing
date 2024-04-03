@@ -33,11 +33,12 @@ class NotesTestCase(TestCase):
             title='testTitle',
             text='testText',
             author=cls.author,
+            slug=cls.SLUG
         )
         cls.form_data = {
-            'title': 'testTitle',
-            'text': 'testText',
-            'slug': cls.SLUG,
+            'title': 'testformTitle',
+            'text': 'testformText',
+            'slug': 'testformtitle',
         }
         cls.new_form_data = {
             'title': 'newtestTitle',

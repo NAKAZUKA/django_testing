@@ -27,7 +27,6 @@ class LogicTestCase(NotesTestCase):
 
     def test_not_auth_user_cannot_create_note(self):
         """Тест незалогиненный пользователь не может создать заметку"""
-        Note.objects.all().delete()
         existing_notes_before = set(Note.objects.all())
         response = self.client.post(
             self.ADD_URL,
@@ -36,8 +35,7 @@ class LogicTestCase(NotesTestCase):
         existing_notes_after = set(Note.objects.all())
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertEqual(existing_notes_after, existing_notes_before)
-        new_note = existing_notes_after - existing_notes_before
-        self.assertEqual(len(new_note), 0)
+        self.assertEqual(len(existing_notes_after - existing_notes_before), 0)
 
     def test_cannot_create_note_with_same_url(self):
         """
@@ -45,6 +43,7 @@ class LogicTestCase(NotesTestCase):
         сравнивает состав заметки созданой пользователем и существующей в базе
         проверяет наличие предупреждения в context переданной в шаблон
         """
+        self.form_data['slug'] = self.SLUG
         existing_notes_before = set(Note.objects.all())
         response = self.author_client.post(
             self.ADD_URL,
@@ -58,9 +57,6 @@ class LogicTestCase(NotesTestCase):
         )
         existing_notes_after = set(Note.objects.all())
         self.assertEqual(existing_notes_before, existing_notes_after)
-        self.assertEqual(self.note.title, self.form_data['title'])
-        self.assertEqual(self.note.text, self.form_data['text'])
-        self.assertEqual(self.note.author, self.author)
 
     def test_autofill_url_in_form(self):
         """
@@ -83,6 +79,7 @@ class LogicTestCase(NotesTestCase):
 
     def test_author_can_edit_note(self):
         """Автор может редактировать свою заметку"""
+        note_before_edit = self.note
         response = self.author_client.post(
             self.EDIT_URL,
             data=self.new_form_data
@@ -92,7 +89,7 @@ class LogicTestCase(NotesTestCase):
         self.assertEqual(note.title, self.new_form_data['title'])
         self.assertEqual(note.text, self.new_form_data['text'])
         self.assertEqual(note.slug, self.new_form_data['slug'])
-        self.assertEqual(note.author, self.author)
+        self.assertEqual(note.author, note_before_edit.author)
 
     def test_author_can_delete_note(self):
         """Автор может удалить свою заметку"""
@@ -106,16 +103,17 @@ class LogicTestCase(NotesTestCase):
         Тест проверяет недоступность редактирования
         заметок других пользователей
         """
+        note_befor_edit = self.note
         response = self.user_client.post(
             self.EDIT_URL,
             data=self.new_form_data
         )
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        self.note = Note.objects.get(id=self.note.id)
-        self.assertNotEqual(self.note.title, self.new_form_data['title'])
-        self.assertNotEqual(self.note.text, self.new_form_data['text'])
-        self.assertNotEqual(self.note.slug, self.new_form_data['slug'])
-        self.assertNotEqual(self.note.author, self.user)
+        note_after_edit = Note.objects.get(id=self.note.id)
+        self.assertEqual(note_befor_edit.title, note_after_edit.title)
+        self.assertEqual(note_befor_edit.text, note_after_edit.text)
+        self.assertEqual(note_befor_edit.author, note_after_edit.author)
+        self.assertEqual(note_befor_edit.slug, note_after_edit.slug)
 
     def test_user_cannot_delete_note(self):
         """
@@ -126,4 +124,4 @@ class LogicTestCase(NotesTestCase):
         response = self.user_client.delete(self.DELETE_URL)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         notes_after_delete = set(Note.objects.values_list('id', flat=True))
-        self.assertSetEqual(notes_after_delete - notes_before_delete, set())
+        self.assertEqual(notes_after_delete, notes_before_delete)

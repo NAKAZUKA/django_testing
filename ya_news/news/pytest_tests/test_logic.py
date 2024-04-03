@@ -63,6 +63,7 @@ def test_author_client_can_edit_comment(author_client,
     assert response.status_code == HTTPStatus.FOUND
     assert new_comment.text == comment_form_data['text']
     assert new_comment.author == comment.author
+    assert new_comment.news == comment.news
 
 
 def test_author_client_can_delete_comment(author_client,
@@ -98,10 +99,13 @@ def test_user_cant_edit_comment_another_user(not_author_client,
                                              edit_page_url,
                                              comment,
                                              ):
+    """Пользователи не могут редактировать не свои комментарии"""
     response = not_author_client.post(
         edit_page_url,
         data=comment_form_data
     )
     new_comment = Comment.objects.get(id=comment.id)
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert new_comment.author == new_comment.author
+    assert new_comment.author == comment.author
+    assert new_comment.news == comment.news
+    assert new_comment.text == comment.text

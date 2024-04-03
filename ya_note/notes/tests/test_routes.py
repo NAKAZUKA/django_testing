@@ -24,18 +24,17 @@ class RoutesTestCase(NotesTestCase):
         ]
 
         for url, client, expected_status_code in urls_and_expected_status:
-            response = client.get(url)
-            assert response.status_code == expected_status_code
+            assert client.get(url).status_code == expected_status_code
 
     def test_redirect_for_anonymous_user(self):
         """Тест проверяет перенаправление анонимного пользователя."""
         routes_to_check = [
-            (self.DETAIL_URL, self.client),
-            (self.EDIT_URL, self.client),
-            (self.DELETE_URL, self.client),
+            (self.DETAIL_URL),
+            (self.EDIT_URL),
+            (self.DELETE_URL),
         ]
-        for url, client in routes_to_check:
-            response = client.get(url)
+        for url in routes_to_check:
+            response = self.client.get(url)
             self.assertRedirects(
                 response, f'{self.USER_LOGIN_URL}?next={url}'
             )
